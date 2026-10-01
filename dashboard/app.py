@@ -103,33 +103,48 @@ st.markdown("""
         font-weight: 600 !important;
     }
 
-    /* Custom KPI Card class */
+    /* Custom KPI Card class - Equal length & breadth with no text overflow */
     .custom-kpi-card {
         background-color: #232F3E;
         border-radius: 10px;
-        padding: 16px 18px;
+        padding: 14px 16px;
         border-left: 5px solid #FF9900;
         border: 1px solid #3d4a5d;
         box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        margin-bottom: 10px;
+        height: 125px;
+        min-height: 125px;
+        max-height: 125px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-sizing: border-box;
+        overflow: hidden;
     }
     .custom-kpi-title {
         color: #FF9900;
-        font-size: 0.92rem;
+        font-size: 0.85rem;
         font-weight: 700;
-        margin-bottom: 6px;
-        letter-spacing: 0.2px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .custom-kpi-val {
         color: #FFFFFF;
-        font-size: 1.8rem;
+        font-size: 1.55rem;
         font-weight: 800;
         line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .custom-kpi-sub {
         color: #A0AEC0;
-        font-size: 0.8rem;
-        margin-top: 4px;
+        font-size: 0.76rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -177,13 +192,24 @@ CAT_IMAGE_MAP = {
     "Pantry & Groceries": "assets/cat_pantry.png",
 }
 
+def format_inr(val):
+    """Format large currency numbers cleanly (e.g. ₹15.58 Cr) to prevent text overflow"""
+    if not isinstance(val, (int, float, np.number)):
+        return str(val)
+    if val >= 10_000_000:
+        return f"₹{val / 10_000_000:.2f} Cr"
+    elif val >= 100_000:
+        return f"₹{val / 100_000:.2f} L"
+    else:
+        return f"₹{val:,.0f}"
+
 def render_kpi(icon, label, value, sub_text=""):
-    """Render high-contrast, beautiful custom KPI card immune to theme conflicts"""
+    """Render high-contrast, beautiful custom KPI card with exact uniform length and breadth"""
     st.markdown(f"""
     <div class="custom-kpi-card">
         <div class="custom-kpi-title">{icon} {label}</div>
-        <div class="custom-kpi-val">{value}</div>
-        {f'<div class="custom-kpi-sub">{sub_text}</div>' if sub_text else ''}
+        <div class="custom-kpi-val" title="{value}">{value}</div>
+        <div class="custom-kpi-sub">{sub_text if sub_text else '&nbsp;'}</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -259,13 +285,13 @@ margin_pct = (tot_profit / max(tot_sales, 1)) * 100
 
 kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
 with kpi1:
-    render_kpi("💰", "Total Sales", f"₹{tot_sales:,.0f}", f"{tot_units:,} units sold")
+    render_kpi("💰", "Total Sales", format_inr(tot_sales), f"{tot_units:,} units shipped")
 with kpi2:
-    render_kpi("📈", "Total Profit", f"₹{tot_profit:,.0f}", f"{margin_pct:.1f}% net margin")
+    render_kpi("📈", "Total Profit", format_inr(tot_profit), f"{margin_pct:.1f}% net margin")
 with kpi3:
     render_kpi("🛒", "Total Orders", f"{tot_orders:,}", "Across 10 key states")
 with kpi4:
-    render_kpi("🏷️", "Avg Order Value", f"₹{aov:,.0f}", "Gross revenue per order")
+    render_kpi("🏷️", "Avg Order Value", format_inr(aov), "Revenue per order")
 with kpi5:
     render_kpi("📊", "Profit Margin", f"{margin_pct:.1f}%", "Healthy profitability")
 
@@ -486,13 +512,12 @@ with tab_ai:
 
             days_ahead = st.slider("Select Forecast Horizon (Days)", min_value=7, max_value=60, value=30, step=1)
             future_df = generate_future_forecast(forecast_art, horizon_days=days_ahead)
-
             proj_rev = future_df["Predicted_Sales_INR"].sum()
             f_col1, f_col2 = st.columns(2)
             with f_col1:
-                render_kpi("📅", f"Projected {days_ahead}-Day Sales", f"₹{proj_rev:,.2f}", "Total expected revenue")
+                render_kpi("📅", f"Projected Sales", format_inr(proj_rev), f"{days_ahead}-day expected revenue")
             with f_col2:
-                render_kpi("📊", "Avg Daily Sales", f"₹{future_df['Predicted_Sales_INR'].mean():,.2f}", "Per day expectation")
+                render_kpi("📊", "Avg Daily Sales", format_inr(future_df['Predicted_Sales_INR'].mean()), "Daily average expectation")
 
             # Plot
             hist_recent = df[df["Order_Status"] != "Cancelled"].groupby("Order_Date")["Total_Sales_INR"].sum().reset_index().tail(45)
@@ -550,7 +575,7 @@ with tab_ai:
                 sel_pay = st.selectbox("Payment Method", clf_art["payment_methods"], key="r_pay")
                 sel_ful = st.selectbox("Fulfillment Mode", clf_art["fulfillments"], key="r_ful")
                 order_val = sel_qty * sel_price * (1.0 - sel_disc)
-                render_kpi("💵", "Estimated Order Value", f"₹{order_val:,.2f}")
+                render_kpi("💵", "Estimated Order", format_inr(order_val), f"Exact: ₹{order_val:,.2f}")
 
             if st.button("🚀 Check Return Probability", type="primary", use_container_width=True):
                 order_input = {

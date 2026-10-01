@@ -28,27 +28,34 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for a clean, executive look
+# Custom CSS for Amazon Corporate Theme
 st.markdown("""
 <style>
-    .main-title {
-        font-size: 2.2rem;
+    .main-banner {
+        background: linear-gradient(135deg, #131921 0%, #232F3E 100%);
+        padding: 18px 24px;
+        border-radius: 10px;
+        border-left: 6px solid #FF9900;
+        margin-bottom: 22px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .main-banner-title {
+        font-size: 2.1rem;
         font-weight: 800;
         color: #FF9900;
-        margin-bottom: 2px;
+        margin-bottom: 6px;
+        letter-spacing: -0.5px;
     }
-    .sub-title {
-        font-size: 1.05rem;
-        color: #232F3E;
-        margin-bottom: 20px;
+    .main-banner-subtitle {
+        font-size: 1.15rem;
+        color: #FFFFFF !important;
+        font-weight: 500;
+        line-height: 1.5;
     }
-    .card {
-        background-color: #ffffff;
-        border-radius: 10px;
-        padding: 16px;
-        border: 1px solid #E0E0E0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.04);
-        margin-bottom: 12px;
+    .main-banner-highlight {
+        color: #FF9900 !important;
+        font-weight: 800;
+        font-size: 1.25rem;
     }
     .badge-insight {
         background-color: #EBF8FF;
@@ -102,18 +109,38 @@ def load_ml_models():
 df = load_data()
 forecast_art, clf_art = load_ml_models()
 
+# Category image assets mapping
+CAT_IMAGE_MAP = {
+    "Electronics & Mobiles": "assets/cat_electronics.png",
+    "Apparel & Fashion": "assets/cat_apparel.png",
+    "Home & Kitchen": "assets/cat_home.png",
+    "Beauty & Personal Care": "assets/cat_beauty.png",
+    "Pantry & Groceries": "assets/cat_pantry.png",
+}
 
 # -----------------------------------------------------------------------------
-# SIDEBAR FILTERS (SIMPLE & INTUITIVE)
+# SIDEBAR FILTERS (USING LOCAL LOGO & VISUAL BADGES)
 # -----------------------------------------------------------------------------
 with st.sidebar:
-    st.image("https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg", width=130)
+    # 1. Reliable local Amazon logo (never blank)
+    logo_path = "assets/amazon_logo.png"
+    if os.path.exists(logo_path):
+        st.image(logo_path, width=220)
+    else:
+        st.markdown("<h2 style='color:#FF9900;'>amazon.in</h2>", unsafe_allow_html=True)
+
     st.markdown("### 🎛️ Quick Filters")
     st.caption("Filter data across all dashboard sections")
 
     # Category Filter
     categories = ["All Categories"] + sorted(df["Category"].dropna().unique().tolist())
     selected_cat = st.selectbox("Product Category", categories)
+
+    # Show thumbnail card if category selected
+    if selected_cat != "All Categories" and selected_cat in CAT_IMAGE_MAP:
+        cat_thumb = CAT_IMAGE_MAP[selected_cat]
+        if os.path.exists(cat_thumb):
+            st.image(cat_thumb, use_container_width=True)
 
     # State Filter
     states = ["All States"] + sorted(df["Ship_State"].dropna().unique().tolist())
@@ -139,10 +166,18 @@ if selected_ful != "All Channels":
 
 
 # -----------------------------------------------------------------------------
-# HEADER & EXECUTIVE KPI SUMMARY
+# EXECUTIVE HEADER BANNER (ALL WHITE & AMAZON ORANGE COLORS)
 # -----------------------------------------------------------------------------
-st.markdown('<div class="main-title">Amazon India Management Dashboard</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-title">Prepared by <b>Manoj</b> for <b>Manager Ravi</b> | Business Performance & AI System</div>', unsafe_allow_html=True)
+st.markdown("""
+<div class="main-banner">
+    <div class="main-banner-title">
+        Amazon India Management Dashboard
+    </div>
+    <div class="main-banner-subtitle">
+        Prepared by <span class="main-banner-highlight">Manoj</span> for <span class="main-banner-highlight">Manager Ravi</span> &nbsp;|&nbsp; <span style="color: #FFFFFF; font-weight: 600;">Business Performance &amp; AI-Powered Intelligence System</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 # Top 5 Core Executive KPIs
 tot_sales = filtered_df["Total_Sales_INR"].sum()
@@ -226,11 +261,32 @@ with tab_overview:
 
 
 # =============================================================================
-# TAB 2: CATEGORY & PRODUCT PERFORMANCE
+# TAB 2: CATEGORY & PRODUCT PERFORMANCE WITH VISUAL CARDS
 # =============================================================================
 with tab_products:
     st.subheader("Which products and categories are driving business?")
     st.markdown('<div class="badge-insight">💡 <b>Executive Insight:</b> <b>Electronics & Mobiles</b> brings in 50% of top-line revenue, while <b>Apparel & Fashion</b> and <b>Home & Kitchen</b> produce the highest profit margins (>21.5%).</div>', unsafe_allow_html=True)
+
+    # Visual Category Cards Showcase from Database
+    st.markdown("### 🖼️ Catalog Categories Gallery")
+    st.caption("Visual overview of categories present in Amazon India sales dataset")
+
+    cat_cols = st.columns(5)
+    catalog_meta = [
+        ("Electronics & Mobiles", "cat_electronics.png", "📱 ₹7.84 Cr Sales"),
+        ("Apparel & Fashion", "cat_apparel.png", "👕 ₹3.71 Cr Sales"),
+        ("Home & Kitchen", "cat_home.png", "🍳 ₹2.98 Cr Sales"),
+        ("Beauty & Personal Care", "cat_beauty.png", "💄 ₹65.8 Lakhs"),
+        ("Pantry & Groceries", "cat_pantry.png", "🌾 ₹39.5 Lakhs")
+    ]
+    for idx, (cat_name, img_name, rev_text) in enumerate(catalog_meta):
+        with cat_cols[idx]:
+            img_p = os.path.join("assets", img_name)
+            if os.path.exists(img_p):
+                st.image(img_p, use_container_width=True)
+            st.markdown(f"<div style='text-align:center; font-weight:700; color:#FF9900; margin-top:-6px;'>{rev_text}</div>", unsafe_allow_html=True)
+
+    st.markdown("---")
 
     col_cat, col_prod = st.columns(2)
 
@@ -383,6 +439,9 @@ with tab_ai:
             r1, r2, r3 = st.columns(3)
             with r1:
                 sel_cat = st.selectbox("Category", clf_art["categories"], key="r_cat")
+                # Show visual thumbnail for selected category
+                if sel_cat in CAT_IMAGE_MAP and os.path.exists(CAT_IMAGE_MAP[sel_cat]):
+                    st.image(CAT_IMAGE_MAP[sel_cat], use_container_width=True)
                 # Filter products for selected category
                 prod_opts = df[df["Category"] == sel_cat]["Product"].unique().tolist() or clf_art["products"]
                 sel_prod = st.selectbox("Product", prod_opts, key="r_prod")

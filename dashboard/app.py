@@ -19,7 +19,7 @@ from src.prediction import predict_order_return_risk
 from src.forecasting import generate_future_forecast
 
 # -----------------------------------------------------------------------------
-# PAGE SETUP & MODERN STYLING
+# PAGE SETUP & MODERN STYLING (HIGH-CONTRAST FOR DARK & LIGHT MODES)
 # -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="Amazon India Executive Dashboard",
@@ -28,21 +28,22 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for Amazon Corporate Theme
+# Custom High-Contrast CSS for both Dark and Light themes
 st.markdown("""
 <style>
+    /* Main Top Banner */
     .main-banner {
         background: linear-gradient(135deg, #131921 0%, #232F3E 100%);
         padding: 18px 24px;
         border-radius: 10px;
         border-left: 6px solid #FF9900;
         margin-bottom: 22px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
     }
     .main-banner-title {
         font-size: 2.1rem;
         font-weight: 800;
-        color: #FF9900;
+        color: #FF9900 !important;
         margin-bottom: 6px;
         letter-spacing: -0.5px;
     }
@@ -57,20 +58,78 @@ st.markdown("""
         font-weight: 800;
         font-size: 1.25rem;
     }
+
+    /* Executive Insight Notice */
     .badge-insight {
-        background-color: #EBF8FF;
-        border-left: 4px solid #3182CE;
-        padding: 12px 16px;
-        border-radius: 6px;
-        color: #2B6CB0;
-        font-size: 0.95rem;
-        margin-bottom: 18px;
+        background: #1A232F !important;
+        border-left: 5px solid #FF9900 !important;
+        border: 1px solid #2E3B4E !important;
+        padding: 14px 18px !important;
+        border-radius: 8px !important;
+        color: #FFFFFF !important;
+        font-size: 0.95rem !important;
+        margin-bottom: 18px !important;
+        line-height: 1.5;
     }
-    .stMetric {
-        background: #F8F9FA;
-        padding: 12px;
-        border-radius: 8px;
-        border-left: 4px solid #FF9900;
+    .badge-insight b, .badge-insight strong {
+        color: #FF9900 !important;
+    }
+
+    /* Override Streamlit Metric Cards for 100% Visibility */
+    div[data-testid="stMetric"] {
+        background-color: #232F3E !important;
+        border-radius: 10px !important;
+        padding: 14px 16px !important;
+        border-left: 5px solid #FF9900 !important;
+        border: 1px solid #37475A !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.25) !important;
+    }
+    div[data-testid="stMetric"] label,
+    div[data-testid="stMetric"] [data-testid="stMetricLabel"],
+    div[data-testid="stMetric"] [data-testid="stMetricLabel"] p {
+        color: #FF9900 !important;
+        font-size: 0.95rem !important;
+        font-weight: 700 !important;
+    }
+    div[data-testid="stMetric"] [data-testid="stMetricValue"],
+    div[data-testid="stMetric"] [data-testid="stMetricValue"] div {
+        color: #FFFFFF !important;
+        font-size: 1.8rem !important;
+        font-weight: 800 !important;
+    }
+    div[data-testid="stMetric"] [data-testid="stMetricDelta"],
+    div[data-testid="stMetric"] [data-testid="stMetricDelta"] div {
+        color: #E2E8F0 !important;
+        font-weight: 600 !important;
+    }
+
+    /* Custom KPI Card class */
+    .custom-kpi-card {
+        background-color: #232F3E;
+        border-radius: 10px;
+        padding: 16px 18px;
+        border-left: 5px solid #FF9900;
+        border: 1px solid #3d4a5d;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        margin-bottom: 10px;
+    }
+    .custom-kpi-title {
+        color: #FF9900;
+        font-size: 0.92rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+        letter-spacing: 0.2px;
+    }
+    .custom-kpi-val {
+        color: #FFFFFF;
+        font-size: 1.8rem;
+        font-weight: 800;
+        line-height: 1.2;
+    }
+    .custom-kpi-sub {
+        color: #A0AEC0;
+        font-size: 0.8rem;
+        margin-top: 4px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -118,11 +177,22 @@ CAT_IMAGE_MAP = {
     "Pantry & Groceries": "assets/cat_pantry.png",
 }
 
+def render_kpi(icon, label, value, sub_text=""):
+    """Render high-contrast, beautiful custom KPI card immune to theme conflicts"""
+    st.markdown(f"""
+    <div class="custom-kpi-card">
+        <div class="custom-kpi-title">{icon} {label}</div>
+        <div class="custom-kpi-val">{value}</div>
+        {f'<div class="custom-kpi-sub">{sub_text}</div>' if sub_text else ''}
+    </div>
+    """, unsafe_allow_html=True)
+
+
 # -----------------------------------------------------------------------------
-# SIDEBAR FILTERS (USING LOCAL LOGO & VISUAL BADGES)
+# SIDEBAR FILTERS (LOCAL LOGO & HIGH-CONTRAST CONTROLS)
 # -----------------------------------------------------------------------------
 with st.sidebar:
-    # 1. Reliable local Amazon logo (never blank)
+    # 1. Reliable local Amazon logo
     logo_path = "assets/amazon_logo.png"
     if os.path.exists(logo_path):
         st.image(logo_path, width=220)
@@ -179,7 +249,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Top 5 Core Executive KPIs
+# Top 5 Core Executive KPIs using High-Contrast Custom Cards
 tot_sales = filtered_df["Total_Sales_INR"].sum()
 tot_profit = filtered_df["Profit_INR"].sum()
 tot_orders = filtered_df["Order_ID"].nunique()
@@ -188,13 +258,18 @@ aov = tot_sales / max(tot_orders, 1)
 margin_pct = (tot_profit / max(tot_sales, 1)) * 100
 
 kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
-kpi1.metric("💰 Total Sales", f"₹{tot_sales:,.0f}")
-kpi2.metric("📈 Total Profit", f"₹{tot_profit:,.0f}")
-kpi3.metric("🛒 Total Orders", f"{tot_orders:,}")
-kpi4.metric("🏷️ Average Order Value", f"₹{aov:,.0f}")
-kpi5.metric("📊 Profit Margin", f"{margin_pct:.1f}%")
+with kpi1:
+    render_kpi("💰", "Total Sales", f"₹{tot_sales:,.0f}", f"{tot_units:,} units sold")
+with kpi2:
+    render_kpi("📈", "Total Profit", f"₹{tot_profit:,.0f}", f"{margin_pct:.1f}% net margin")
+with kpi3:
+    render_kpi("🛒", "Total Orders", f"{tot_orders:,}", "Across 10 key states")
+with kpi4:
+    render_kpi("🏷️", "Avg Order Value", f"₹{aov:,.0f}", "Gross revenue per order")
+with kpi5:
+    render_kpi("📊", "Profit Margin", f"{margin_pct:.1f}%", "Healthy profitability")
 
-st.markdown("---")
+st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
 
 # -----------------------------------------------------------------------------
@@ -236,6 +311,8 @@ with tab_overview:
         xaxis_title="Month",
         yaxis_title="Amount (INR)",
         hovermode="x unified",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
     st.plotly_chart(fig_trend, use_container_width=True)
@@ -304,6 +381,7 @@ with tab_products:
             title="<b>Sales by Category (INR)</b>", color="Sales",
             color_continuous_scale="Oranges"
         )
+        fig_cat.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig_cat, use_container_width=True)
 
     with col_prod:
@@ -312,6 +390,7 @@ with tab_products:
             title="<b>Profit Margin by Category (%)</b>", color="Margin_%",
             color_continuous_scale="Greens"
         )
+        fig_margin.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig_margin, use_container_width=True)
 
     # Top 10 Best Sellers
@@ -329,7 +408,7 @@ with tab_products:
         prod_df, x="Sales", y="Product", color="Category", orientation="h",
         title="<b>Top 10 Products by Total Revenue</b>"
     )
-    fig_top10.update_layout(yaxis=dict(autorange="reversed"))
+    fig_top10.update_layout(yaxis=dict(autorange="reversed"), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
     st.plotly_chart(fig_top10, use_container_width=True)
 
 
@@ -353,14 +432,22 @@ with tab_health:
             color=status_counts.index,
             color_discrete_map={"Delivered": "#107C41", "Shipped": "#1f77b4", "Returned": "#D83B01", "Cancelled": "#797775"}
         )
+        fig_pie.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig_pie, use_container_width=True)
 
     with col_st2:
         st.markdown("#### 🚨 Return & Cancellation Rates")
-        st.metric("Return Rate", f"{ret_rate:.2f}%", f"{status_counts.get('Returned', 0):,} orders")
-        st.metric("Cancellation Rate", f"{canc_rate:.2f}%", f"{status_counts.get('Cancelled', 0):,} orders")
+        r_c1, r_c2 = st.columns(2)
+        with r_c1:
+            render_kpi("↩️", "Return Rate", f"{ret_rate:.2f}%", f"{status_counts.get('Returned', 0):,} orders")
+        with r_c2:
+            render_kpi("❌", "Cancellation Rate", f"{canc_rate:.2f}%", f"{status_counts.get('Cancelled', 0):,} orders")
         lost_money = filtered_df["Lost_Sales_INR"].sum()
-        st.error(f"**Total Revenue Lost to Returns/Cancellations:** ₹{lost_money:,.2f}")
+        st.markdown(f"""
+        <div style="background-color: #3b2222; border-left: 5px solid #d62728; padding: 12px 16px; border-radius: 6px; color: #ffcccc; margin-top: 10px;">
+            ⚠️ <b>Total Revenue Lost to Returns/Cancellations:</b> <span style="font-size: 1.2rem; font-weight:800; color: #FFFFFF;">₹{lost_money:,.2f}</span>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.markdown("---")
     st.markdown("### 🗺️ Top 10 States by Sales & Logistics Performance")
@@ -377,6 +464,7 @@ with tab_health:
         state_df, x="Ship_State", y="Sales", color="Profit",
         title="<b>Sales and Profit by State</b>", color_continuous_scale="Blues"
     )
+    fig_state.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
     st.plotly_chart(fig_state, use_container_width=True)
 
 
@@ -401,8 +489,10 @@ with tab_ai:
 
             proj_rev = future_df["Predicted_Sales_INR"].sum()
             f_col1, f_col2 = st.columns(2)
-            f_col1.metric(f"Projected {days_ahead}-Day Sales", f"₹{proj_rev:,.2f}")
-            f_col2.metric("Average Expected Daily Sales", f"₹{future_df['Predicted_Sales_INR'].mean():,.2f}")
+            with f_col1:
+                render_kpi("📅", f"Projected {days_ahead}-Day Sales", f"₹{proj_rev:,.2f}", "Total expected revenue")
+            with f_col2:
+                render_kpi("📊", "Avg Daily Sales", f"₹{future_df['Predicted_Sales_INR'].mean():,.2f}", "Per day expectation")
 
             # Plot
             hist_recent = df[df["Order_Status"] != "Cancelled"].groupby("Order_Date")["Total_Sales_INR"].sum().reset_index().tail(45)
@@ -425,7 +515,13 @@ with tab_ai:
                 mode="lines", fill="tonexty", fillcolor="rgba(255, 153, 0, 0.15)",
                 name="Confidence Range (±15%)", line=dict(width=0)
             ))
-            fig_forecast.update_layout(title=f"<b>Next {days_ahead} Days AI Sales Forecast</b>", xaxis_title="Date", yaxis_title="Sales (INR)")
+            fig_forecast.update_layout(
+                title=f"<b>Next {days_ahead} Days AI Sales Forecast</b>",
+                xaxis_title="Date",
+                yaxis_title="Sales (INR)",
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)"
+            )
             st.plotly_chart(fig_forecast, use_container_width=True)
         else:
             st.warning("Forecasting model not found. Run model training script to generate artifact.")
@@ -454,7 +550,7 @@ with tab_ai:
                 sel_pay = st.selectbox("Payment Method", clf_art["payment_methods"], key="r_pay")
                 sel_ful = st.selectbox("Fulfillment Mode", clf_art["fulfillments"], key="r_ful")
                 order_val = sel_qty * sel_price * (1.0 - sel_disc)
-                st.metric("Total Order Value", f"₹{order_val:,.2f}")
+                render_kpi("💵", "Estimated Order Value", f"₹{order_val:,.2f}")
 
             if st.button("🚀 Check Return Probability", type="primary", use_container_width=True):
                 order_input = {
@@ -472,15 +568,27 @@ with tab_ai:
 
                 col_res1, col_res2 = st.columns(2)
                 with col_res1:
-                    st.metric("Predicted Return Probability", f"{res['return_probability']}%")
+                    render_kpi("🎯", "Return Probability", f"{res['return_probability']}%", "Calculated by XGBoost")
                     st.progress(res['return_probability'] / 100.0)
                 with col_res2:
                     if res["risk_level"] == "High Risk":
-                        st.error(f"🔴 **{res['risk_level']}**")
+                        st.markdown(f"""
+                        <div style="background-color: #3b2222; border-left: 5px solid #d62728; padding: 16px; border-radius: 8px; color: #ffcccc; margin-top: 10px;">
+                            <span style="font-size: 1.3rem; font-weight:800; color: #ff4d4d;">🔴 {res['risk_level']}</span>
+                        </div>
+                        """, unsafe_allow_html=True)
                     elif res["risk_level"] == "Medium Risk":
-                        st.warning(f"🟡 **{res['risk_level']}**")
+                        st.markdown(f"""
+                        <div style="background-color: #3a321d; border-left: 5px solid #ff9900; padding: 16px; border-radius: 8px; color: #ffe6aa; margin-top: 10px;">
+                            <span style="font-size: 1.3rem; font-weight:800; color: #ffaa00;">🟡 {res['risk_level']}</span>
+                        </div>
+                        """, unsafe_allow_html=True)
                     else:
-                        st.success(f"🟢 **{res['risk_level']}**")
+                        st.markdown(f"""
+                        <div style="background-color: #1b3322; border-left: 5px solid #2ca02c; padding: 16px; border-radius: 8px; color: #ccffdd; margin-top: 10px;">
+                            <span style="font-size: 1.3rem; font-weight:800; color: #00ff66;">🟢 {res['risk_level']}</span>
+                        </div>
+                        """, unsafe_allow_html=True)
 
                 st.info(f"📋 **Actionable Advice for Ravi:** {res['recommendation']}")
         else:
